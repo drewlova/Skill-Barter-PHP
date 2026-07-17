@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillSwap — Proof of Concept</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f1a;
+      --bg2: #16162a;
+      --bg3: #1e1e38;
+      --border: #2a2a45;
+      --accent: #7c5ce7;
+      --accent2: #a78bfa;
+      --accent-glow: rgba(124,92,231,0.18);
+      --green: #4ade80;
+      --green-dim: rgba(74,222,128,0.13);
+      --amber: #fbbf24;
+      --amber-dim: rgba(251,191,36,0.13);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.13);
+      --text: #e2e2f0;
+      --text2: #8080aa;
+      --text3: #44447a;
+      --radius: 14px;
+      --radius-sm: 9px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ══ SIDEBAR ══ */
+    .sidebar {
+      width: 220px; min-height: 100vh; background: var(--bg2);
+      border-right: 1.5px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; z-index: 100;
+      padding-bottom: 14px;
+    }
+    .logo { padding: 20px 18px 16px; border-bottom: 1.5px solid var(--border); }
+    .logo-text { font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent2); }
+    .logo-sub { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 3px; }
+
+    .nav { padding: 12px 10px; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .nav-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; padding: 10px 10px 5px; }
+    .nav-btn {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 9px 11px; border-radius: 10px;
+      font-size: 13px; font-weight: 600; color: var(--text2);
+      background: none; border: none; cursor: pointer; text-align: left;
+      transition: all 0.15s; font-family: 'Inter', sans-serif;
+    }
+    .nav-btn i { font-size: 16px; }
+    .nav-btn:hover { background: var(--bg3); color: var(--text); }
+    .nav-btn.active { background: var(--accent-glow); color: var(--accent2); }
+
+    .sidebar-user {
+      margin: 0 10px; padding: 11px 12px;
+      background: var(--bg3); border: 1.5px solid var(--border); border-radius: 11px;
+      display: flex; align-items: center; gap: 9px;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .sidebar-user:hover { border-color: var(--accent2); }
+
+    /* ══ MAIN ══ */
+    .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar {
+      height: 56px; background: var(--bg2); border-bottom: 1.5px solid var(--border);
+      display: flex; align-items: center; padding: 0 24px; gap: 12px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-title { font-family: 'Nunito', sans-serif; font-size: 17px; font-weight: 900; color: #fff; flex: 1; }
+    .notif-btn {
+      width: 34px; height: 34px; background: var(--bg3); border: 1.5px solid var(--border);
+      border-radius: 9px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--text2); font-size: 15px; position: relative; transition: border-color 0.15s;
+    }
+    .notif-btn:hover { border-color: var(--accent2); }
+    .notif-dot { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; background: var(--red); border-radius: 50%; border: 1.5px solid var(--bg2); }
+
+    .content { flex: 1; padding: 22px 24px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ══ COMPONENTS ══ */
+    .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-weight: 900; color: #fff; flex-shrink: 0; }
+    .av-sm { width: 34px; height: 34px; font-size: 12px; }
+    .av-md { width: 40px; height: 40px; font-size: 14px; }
+    .av-lg { width: 68px; height: 68px; font-size: 22px; border: 3px solid var(--accent2); }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.14s; font-family: 'Inter', sans-serif; }
+    .btn:active { transform: scale(0.96); }
+    .btn i { font-size: 15px; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #6b4fd0; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text2); }
+    .btn-outline:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn-green { background: var(--green-dim); border: 1.5px solid rgba(74,222,128,0.3); color: var(--green); }
+    .btn-green:hover { background: rgba(74,222,128,0.22); }
+    .btn-red { background: var(--red-dim); border: 1.5px solid rgba(248,113,113,0.3); color: var(--red); }
+    .btn-red:hover { background: rgba(248,113,113,0.22); }
+    .btn-amber { background: var(--amber-dim); border: 1.5px solid rgba(251,191,36,0.3); color: var(--amber); }
+    .btn-amber:hover { background: rgba(251,191,36,0.22); }
+    .btn-sm { padding: 5px 11px; font-size: 11px; }
+
+    .badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 800; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.6px; }
+    .badge-active { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+    .badge-pending { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251,191,36,0.3); }
+    .badge-done { background: var(--accent-glow); color: var(--accent2); border: 1px solid rgba(167,139,250,0.3); }
+
+    .chip { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .chip-purple { background: var(--accent-glow); color: var(--accent2); border: 1px solid rgba(124,92,231,0.3); }
+    .chip-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+
+    .pill { display: inline-flex; align-items: center; padding: 5px 13px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .pill-purple { background: var(--accent-glow); color: var(--accent2); border: 1px solid rgba(124,92,231,0.3); }
+    .pill-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+
+    .card { background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; }
+    .card-title { font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 900; color: #fff; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+
+    .func-note { font-size: 10px; color: var(--text3); font-weight: 600; margin: -8px 0 12px; }
+
+    /* Dashboard */
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .match-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg3); border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: border-color 0.15s; }
+    .match-item:hover { border-color: var(--accent); }
+    .match-info { flex: 1; min-width: 0; }
+    .match-name { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .match-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+    .session-item { padding: 14px; background: var(--bg3); border: 1.5px solid var(--border); border-radius: 10px; }
+    .session-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .session-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .milestones { display: flex; gap: 5px; margin-bottom: 10px; }
+    .ms { flex: 1; height: 5px; border-radius: 3px; background: var(--border); }
+    .ms.done { background: var(--green); }
+    .ms.curr { background: var(--accent); }
+    .session-foot { display: flex; align-items: center; justify-content: space-between; }
+    .session-peer { font-size: 10px; color: var(--text3); }
+
+    /* Offers */
+    .filters { display: flex; gap: 7px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-btn { padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1.5px solid var(--border); background: transparent; color: var(--text2); transition: all 0.15s; font-family: 'Inter', sans-serif; }
+    .filter-btn:hover, .filter-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent2); }
+    .offer-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 13px; }
+    .offer-card { background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 15px; transition: all 0.15s; }
+    .offer-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .offer-head { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+    .offer-user .name { font-size: 12px; font-weight: 700; }
+    .offer-user .sub { font-size: 10px; color: var(--text3); }
+    .offer-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+    .offer-desc { font-size: 11px; color: var(--text2); line-height: 1.5; margin-bottom: 11px; }
+    .trade-box { background: var(--bg3); border-radius: 8px; padding: 9px 11px; display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 11px; }
+    .trade-box > div { flex: 1; }
+    .trade-label { color: var(--text3); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .trade-val { color: var(--text); font-weight: 600; }
+    .trade-arrow { color: var(--accent2); font-size: 18px; font-weight: 900; }
+
+    /* Sessions (full) */
+    .session-full { padding: 18px; background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; }
+    .ms-detailed { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .ms-box { flex: 1; min-width: 80px; border-radius: 9px; padding: 10px 8px; text-align: center; border: 1.5px solid var(--border); }
+    .ms-box .ms-icon { font-size: 18px; margin-bottom: 3px; }
+    .ms-box .ms-lbl { font-size: 10px; font-weight: 700; }
+    .ms-box.done { background: var(--green-dim); border-color: rgba(74,222,128,0.3); }
+    .ms-box.done .ms-icon, .ms-box.done .ms-lbl { color: var(--green); }
+    .ms-box.curr { background: var(--accent-glow); border-color: rgba(124,92,231,0.3); }
+    .ms-box.curr .ms-icon, .ms-box.curr .ms-lbl { color: var(--accent2); }
+    .ms-box.pending-ms { background: var(--bg3); }
+    .ms-box.pending-ms .ms-icon, .ms-box.pending-ms .ms-lbl { color: var(--text3); }
+    .session-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+
+    /* Profile */
+    .profile-hero { background: var(--bg2); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 22px; display: flex; gap: 18px; align-items: flex-start; margin-bottom: 14px; }
+    .profile-info { flex: 1; }
+    .profile-info h2 { font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 2px; }
+    .profile-stars { color: var(--amber); font-size: 16px; }
+    .profile-bio { font-size: 12px; color: var(--text2); margin: 8px 0 14px; line-height: 1.55; }
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .pills-wrap { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .review-item { padding: 13px; background: var(--bg3); border: 1.5px solid var(--border); border-radius: 10px; }
+    .review-head { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+    .review-meta { flex: 1; }
+    .review-meta .rn { font-size: 12px; font-weight: 700; }
+    .review-meta .rd { font-size: 10px; color: var(--text3); }
+    .review-text { font-size: 11px; color: var(--text2); line-height: 1.55; }
+
+    /* Mod panel */
+    .report-item { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg3); border: 1.5px solid var(--border); border-radius: 10px; transition: opacity 0.3s; }
+    .report-icon { font-size: 22px; flex-shrink: 0; }
+    .report-info { flex: 1; min-width: 0; }
+    .report-info h4 { font-size: 12px; font-weight: 700; margin-bottom: 2px; color: var(--text); }
+    .report-info p { font-size: 11px; color: var(--text2); }
+    .report-actions { display: flex; gap: 7px; flex-shrink: 0; }
+
+    .section-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900; color: #fff; }
+    .section-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 300; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px; padding: 24px; width: 440px; max-width: 92vw; max-height: 88vh; overflow-y: auto; }
+    .modal-title { font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 18px; }
+    .form-label { display: block; font-size: 10px; color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+    .form-ctrl { width: 100%; background: var(--bg3); border: 1.5px solid var(--border); border-radius: 9px; padding: 9px 13px; color: var(--text); font-size: 13px; font-family: 'Inter', sans-serif; outline: none; margin-bottom: 13px; transition: border-color 0.15s; }
+    .form-ctrl:focus { border-color: var(--accent); }
+    textarea.form-ctrl { min-height: 80px; resize: vertical; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 6px; }
+
+    .star-pick { font-size: 28px; letter-spacing: 4px; cursor: pointer; color: var(--border); user-select: none; margin-bottom: 13px; }
+    .star-pick span { transition: color 0.1s; }
+    .star-pick span.lit { color: var(--amber); }
+
+    /* Toasts */
+    #toast-wrap { position: fixed; bottom: 22px; right: 22px; z-index: 500; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { background: var(--bg2); border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 16px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 9px; min-width: 240px; max-width: 340px; box-shadow: 0 6px 28px rgba(0,0,0,0.5); pointer-events: all; animation: toastIn 0.22s ease; }
+    .toast.t-success { border-left: 3px solid var(--green); }
+    .toast.t-error   { border-left: 3px solid var(--red); }
+    .toast.t-info    { border-left: 3px solid var(--accent2); }
+    @keyframes toastIn { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    .flex-between { display: flex; align-items: center; justify-content: space-between; }
+    .mb12 { margin-bottom: 12px; }
+    .w100 { width: 100%; }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 180px; } .main { margin-left: 180px; }
+      .offer-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .sidebar { display: none; } .main { margin-left: 0; }
+      .dash-grid, .profile-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════ SIDEBAR — demonstrates goTo() ════════════════════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-text">Skill<span>Swap</span></div>
+    <div class="logo-sub">Proof of Concept</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Main</div>
+    <button class="nav-btn active" onclick="goTo('dashboard',this)"><i class="ti ti-bolt"></i> Dashboard</button>
+    <button class="nav-btn" onclick="goTo('offers',this)"><i class="ti ti-arrows-exchange"></i> Offers &amp; Requests</button>
+    <button class="nav-btn" onclick="goTo('sessions',this)"><i class="ti ti-handshake"></i> My Sessions</button>
+    <div class="nav-label">Account</div>
+    <button class="nav-btn" onclick="goTo('profile',this)"><i class="ti ti-user"></i> My Profile</button>
+    <button class="nav-btn" onclick="goTo('mod',this)"><i class="ti ti-shield"></i> Mod Panel</button>
+  </nav>
+  <div class="sidebar-user" onclick="goTo('profile',null)">
+    <div class="avatar av-sm" style="background:linear-gradient(135deg,#7c5ce7,#a78bfa)">RP</div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#e2e2f0">Ron Pedrialva</div>
+      <div style="font-size:10px;color:#5a5a7a">⭐ 4.7 · Member</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ════════════════════ MAIN ════════════════════ -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <!-- demonstrates toast() -->
+    <div class="notif-btn" onclick="toast('No new notifications','info')">
+      <i class="ti ti-bell"></i><span class="notif-dot"></span>
+    </div>
+    <!-- demonstrates openModal() -->
+    <button class="btn btn-primary" onclick="openModal('modal-offer')"><i class="ti ti-plus"></i> Post Offer</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ DASHBOARD — one match, one session, milestone confirm ══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-title">🎯 Skill Match</div>
+          <div class="func-note">Placeholder for a matching feed — one item shown</div>
+          <div class="match-item">
+            <div class="avatar av-md" style="background:#7c5ce7">AS</div>
+            <div class="match-info">
+              <div class="match-name">Aiah Santos <span style="color:var(--amber);font-size:10px">★★★★★</span></div>
+              <div class="match-chips">
+                <span class="chip chip-green">Offers Physics</span>
+                <span class="chip chip-purple">Needs Web Design</span>
+              </div>
+            </div>
+            <i class="ti ti-arrow-right" style="color:var(--accent2)"></i>
+          </div>
+        </div>
+
+        <div class="card">
+          <!-- demonstrates goTo() from a button, plus advanceSession1()/dashConfirm() -->
+          <div class="card-title">🤝 Active Session
+            <button class="btn btn-outline btn-sm" onclick="goTo('sessions',null)">View All →</button>
+          </div>
+          <div class="func-note">Placeholder for a session list — one item shown</div>
+          <div class="session-item">
+            <div class="session-head">
+              <span class="session-title">Physics Tutoring ↔ Frontend Layout</span>
+              <span class="badge badge-active">Active</span>
+            </div>
+            <div class="milestones" id="dash-ms">
+              <div class="ms done"></div>
+              <div class="ms curr" id="dash-ms-c"></div>
+              <div class="ms" id="dash-ms-last"></div>
+            </div>
+            <div class="session-foot">
+              <span class="session-peer">with Aiah Santos</span>
+              <button class="btn btn-green btn-sm" id="dash-confirm-btn" onclick="dashConfirm()">✔ Confirm Milestone</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ OFFERS — two cards (needed to show filtering), one filter, propose modal ══ -->
+    <div class="page" id="page-offers">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Skill Offers &amp; Requests</div>
+          <div class="section-sub">Placeholder listing — filter and propose-exchange demo</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-offer')"><i class="ti ti-plus"></i> Post Offer</button>
+      </div>
+      <!-- demonstrates filterOffers() -->
+      <div class="filters">
+        <button class="filter-btn active" onclick="filterOffers('all',this)">All</button>
+        <button class="filter-btn" onclick="filterOffers('science',this)">🔬 Science</button>
+        <button class="filter-btn" onclick="filterOffers('tech',this)">💻 Tech</button>
+      </div>
+      <div class="offer-grid" id="offer-grid">
+        <div class="offer-card" data-cat="science">
+          <div class="offer-head">
+            <div class="avatar av-md" style="background:#7c5ce7">AS</div>
+            <div class="offer-user"><div class="name">Aiah Santos</div><div class="sub">Science</div></div>
+            <span style="color:var(--amber);font-size:11px;font-weight:700;margin-left:auto">★ 4.9</span>
+          </div>
+          <div class="offer-title">Physics Tutor — Mechanics &amp; Waves</div>
+          <div class="offer-desc">Undergrad Physics major, one-on-one sessions via video call.</div>
+          <div class="trade-box">
+            <div><div class="trade-label">🟢 Offers</div><div class="trade-val">Physics Tutoring</div></div>
+            <div class="trade-arrow">⇄</div>
+            <div><div class="trade-label">🔵 Needs</div><div class="trade-val">Web Design</div></div>
+          </div>
+          <!-- demonstrates openModal() -->
+          <button class="btn btn-primary w100" onclick="openModal('modal-request')">🤝 Propose Exchange</button>
+        </div>
+
+        <div class="offer-card" data-cat="tech">
+          <div class="offer-head">
+            <div class="avatar av-md" style="background:#ec4899">ML</div>
+            <div class="offer-user"><div class="name">Marcus Lim</div><div class="sub">Tech</div></div>
+            <span style="color:var(--amber);font-size:11px;font-weight:700;margin-left:auto">★ 4.6</span>
+          </div>
+          <div class="offer-title">Data Analysis — Excel + Python</div>
+          <div class="offer-desc">Cleans, visualizes, and reports data; needs Python debugging in return.</div>
+          <div class="trade-box">
+            <div><div class="trade-label">🟢 Offers</div><div class="trade-val">Data Analysis</div></div>
+            <div class="trade-arrow">⇄</div>
+            <div><div class="trade-label">🔵 Needs</div><div class="trade-val">Python Debugging</div></div>
+          </div>
+          <button class="btn btn-primary w100" onclick="openModal('modal-request')">🤝 Propose Exchange</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SESSIONS — one milestone-stepper example, one agreement-confirm example ══ -->
+    <div class="page" id="page-sessions">
+      <div class="section-header">
+        <div>
+          <div class="section-title">My Sessions</div>
+          <div class="section-sub">Placeholder for the milestone / escrow system</div>
+        </div>
+      </div>
+
+      <!-- demonstrates advanceSession1() -->
+      <div class="session-full">
+        <div class="flex-between mb12">
+          <span class="session-title" style="font-size:15px">Physics Tutoring ↔ Frontend Layout</span>
+          <span class="badge badge-active" id="s1-badge">Active</span>
+        </div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Peer: <strong style="color:var(--text)">Aiah Santos</strong></p>
+        <div class="ms-detailed" id="s1-milestones">
+          <div class="ms-box done"><div class="ms-icon">✔</div><div class="ms-lbl">Intro</div></div>
+          <div class="ms-box curr" id="s1-m2"><div class="ms-icon">⋯</div><div class="ms-lbl">Practice Set</div></div>
+          <div class="ms-box pending-ms" id="s1-m3"><div class="ms-icon">○</div><div class="ms-lbl">Final Review</div></div>
+        </div>
+        <div class="session-actions">
+          <button class="btn btn-green" id="s1-btn" onclick="advanceSession1()">✔ Confirm Milestone</button>
+          <button class="btn btn-outline" onclick="toast('Message sent to Aiah Santos 💬','info')">💬 Message Peer</button>
+        </div>
+      </div>
+
+      <!-- demonstrates confirmAgreement() -->
+      <div class="session-full">
+        <div class="flex-between mb12">
+          <span class="session-title" style="font-size:15px">Data Analysis ↔ Python Script</span>
+          <span class="badge badge-pending" id="s2-badge">Pending</span>
+        </div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Peer: <strong style="color:var(--text)">Marcus Lim</strong></p>
+        <div class="ms-detailed">
+          <div class="ms-box pending-ms"><div class="ms-icon">○</div><div class="ms-lbl">Agreement</div></div>
+          <div class="ms-box pending-ms"><div class="ms-icon">○</div><div class="ms-lbl">Delivery</div></div>
+        </div>
+        <div class="session-actions">
+          <button class="btn btn-primary" id="s2-agree-btn" onclick="confirmAgreement()">✔ Confirm Agreement</button>
+          <button class="btn btn-outline" onclick="toast('Exchange declined','error')">✗ Decline</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROFILE — one skill offered, one skill needed, one review, edit modal ══ -->
+    <div class="page" id="page-profile">
+      <div class="profile-hero">
+        <div class="avatar av-lg" style="background:linear-gradient(135deg,#7c5ce7,#a78bfa)">RP</div>
+        <div class="profile-info">
+          <h2>Ron Pedrialva</h2>
+          <div class="profile-stars">★★★★★ <span style="font-size:11px;color:var(--text2)">4.7 / 5 · 12 reviews</span></div>
+          <p class="profile-bio">CS student who loves building clean UIs.</p>
+        </div>
+        <!-- demonstrates openModal() -->
+        <button class="btn btn-outline" onclick="openModal('modal-edit-profile')">✏️ Edit Profile</button>
+      </div>
+
+      <div class="profile-grid">
+        <div class="card">
+          <div class="card-title">🟢 Skills I Offer</div>
+          <div class="pills-wrap">
+            <span class="pill pill-purple">Python</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🔵 Skills I Need</div>
+          <div class="pills-wrap">
+            <span class="pill pill-green">Physics Tutoring</span>
+          </div>
+        </div>
+        <div class="card" style="grid-column:1/-1">
+          <!-- demonstrates openModal('modal-review') + setStars() -->
+          <div class="card-title">⭐ Review</div>
+          <div class="review-item">
+            <div class="review-head">
+              <div class="avatar av-sm" style="background:#7c5ce7">AS</div>
+              <div class="review-meta"><div class="rn">Aiah Santos</div><div class="rd">June 18, 2026</div></div>
+              <span style="color:var(--amber)">★★★★★</span>
+            </div>
+            <div class="review-text">Delivered a clean, responsive layout ahead of schedule. Highly recommend!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MOD PANEL — one report, demonstrates modAct() ══ -->
+    <div class="page" id="page-mod">
+      <div class="section-header">
+        <div>
+          <div class="section-title">🛡️ Moderator Panel</div>
+          <div class="section-sub">Placeholder report — warn / suspend / dismiss actions</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Pending Report</div>
+        <div class="report-item" id="rep-1">
+          <div class="report-icon">🚨</div>
+          <div class="report-info">
+            <h4>No-show report vs. @juandelacruz</h4>
+            <p>User agreed to tutor session but never showed up.</p>
+          </div>
+          <div class="report-actions">
+            <button class="btn btn-amber btn-sm" onclick="modAct('rep-1','warn')">⚠️ Warn</button>
+            <button class="btn btn-red btn-sm" onclick="modAct('rep-1','suspend')">🔒 Suspend</button>
+            <button class="btn btn-outline btn-sm" onclick="modAct('rep-1','dismiss')">✓ Dismiss</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ════════════════════ MODALS — one per form, each maps to one openModal() call ════════════════════ -->
+
+<div class="modal-overlay" id="modal-offer" onclick="if(event.target===this)closeModal('modal-offer')">
+  <div class="modal">
+    <div class="modal-title">📢 Post a Skill Offer</div>
+    <label class="form-label">Skill You're Offering *</label>
+    <input class="form-ctrl" type="text" placeholder="e.g. Python Debugging">
+    <label class="form-label">Skill You Need in Return *</label>
+    <input class="form-ctrl" type="text" placeholder="e.g. Video Editing">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-offer')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-offer');toast('Offer posted successfully! 🚀','success')">🚀 Post Offer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-request" onclick="if(event.target===this)closeModal('modal-request')">
+  <div class="modal">
+    <div class="modal-title">🤝 Propose Exchange</div>
+    <label class="form-label">Your Message</label>
+    <textarea class="form-ctrl">Hi! I'd love to trade skills with you.</textarea>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-request')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-request');toast('Proposal sent! 📨','success')">Send Proposal →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-review" onclick="if(event.target===this)closeModal('modal-review')">
+  <div class="modal">
+    <div class="modal-title">⭐ Leave a Review</div>
+    <label class="form-label">Your Rating</label>
+    <!-- demonstrates setStars() -->
+    <div class="star-pick" id="star-pick">
+      <span onclick="setStars(1)">★</span>
+      <span onclick="setStars(2)">★</span>
+      <span onclick="setStars(3)">★</span>
+      <span onclick="setStars(4)">★</span>
+      <span onclick="setStars(5)">★</span>
+    </div>
+    <label class="form-label">Review</label>
+    <textarea class="form-ctrl" placeholder="How was the exchange?"></textarea>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-review')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-review');toast('Review submitted! 📈','success')">Submit Review ⭐</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-edit-profile" onclick="if(event.target===this)closeModal('modal-edit-profile')">
+  <div class="modal">
+    <div class="modal-title">✏️ Edit Profile</div>
+    <label class="form-label">Display Name</label>
+    <input class="form-ctrl" type="text" value="Ron Pedrialva">
+    <label class="form-label">Bio</label>
+    <textarea class="form-ctrl">CS student who loves building clean UIs.</textarea>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-profile')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-edit-profile');toast('Profile updated ✅','success')">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script>
+  /* 1. NAVIGATION — swaps which .page has the .active class */
+  const pageNames = { dashboard: 'Dashboard', offers: 'Skill Offers & Requests', sessions: 'My Sessions', profile: 'My Profile', mod: 'Moderator Panel' };
+  function goTo(id, clickedBtn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    if (clickedBtn) {
+      clickedBtn.classList.add('active');
+    } else {
+      document.querySelectorAll('.nav-btn').forEach(b => { if (b.getAttribute('onclick').includes("'" + id + "'")) b.classList.add('active'); });
+    }
+    document.getElementById('topbar-title').textContent = pageNames[id] || id;
+    window.scrollTo(0, 0);
+  }
+
+  /* 2. MODALS — toggle an .open class on the overlay */
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  /* 3. TOAST — creates a temporary notification, removes itself after 3.4s */
+  function toast(msg, type) {
+    const wrap = document.getElementById('toast-wrap');
+    const el = document.createElement('div');
+    el.className = 'toast t-' + type;
+    const icons = { success: '✅', error: '❌', info: '💬' };
+    el.innerHTML = '<span>' + (icons[type] || '💬') + '</span><span>' + msg + '</span>';
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 3400);
+  }
+
+  /* 4. FILTER — shows/hides offer cards by data-cat attribute */
+  function filterOffers(cat, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.offer-card').forEach(c => { c.style.display = (cat === 'all' || c.dataset.cat === cat) ? '' : 'none'; });
+  }
+
+  /* 5. MILESTONE STEPPER — advances a session through its steps one click at a time */
+  let s1Step = 2;
+  function advanceSession1() {
+    if (s1Step === 2) {
+      const m2 = document.getElementById('s1-m2');
+      m2.className = 'ms-box done'; m2.innerHTML = '<div class="ms-icon">✔</div><div class="ms-lbl">Practice Set</div>';
+      const m3 = document.getElementById('s1-m3');
+      m3.className = 'ms-box curr'; m3.innerHTML = '<div class="ms-icon">⋯</div><div class="ms-lbl">Final Review</div>';
+      const dc = document.getElementById('dash-ms-c'); const dl = document.getElementById('dash-ms-last');
+      if (dc) dc.className = 'ms done'; if (dl) dl.className = 'ms curr';
+      s1Step = 3;
+      toast('Milestone "Practice Set" confirmed ✔', 'success');
+    } else if (s1Step === 3) {
+      const m3 = document.getElementById('s1-m3');
+      m3.className = 'ms-box done'; m3.innerHTML = '<div class="ms-icon">✔</div><div class="ms-lbl">Final Review</div>';
+      const dl = document.getElementById('dash-ms-last'); if (dl) dl.className = 'ms done';
+      document.getElementById('s1-badge').textContent = 'Completed';
+      document.getElementById('s1-badge').className = 'badge badge-done';
+      const btn = document.getElementById('s1-btn');
+      btn.textContent = '⭐ Leave Review'; btn.className = 'btn btn-outline'; btn.onclick = () => openModal('modal-review');
+      const db = document.getElementById('dash-confirm-btn');
+      if (db) { db.textContent = '⭐ Leave Review'; db.className = 'btn btn-outline btn-sm'; db.onclick = () => openModal('modal-review'); }
+      s1Step = 4;
+      toast('Session fully complete! 🎉', 'success');
+    }
+  }
+  function dashConfirm() { advanceSession1(); } // dashboard button reuses the same stepper
+
+  /* 6. AGREEMENT CONFIRM — flips a pending session to active */
+  function confirmAgreement() {
+    document.getElementById('s2-badge').textContent = 'Active';
+    document.getElementById('s2-badge').className = 'badge badge-active';
+    document.getElementById('s2-agree-btn').remove();
+    toast('Agreement confirmed! Session is now active ✅', 'success');
+  }
+
+  /* 7. MODERATOR ACTIONS — fades out the report row after acting on it */
+  function modAct(id, action) {
+    const msgs = { warn: 'Warning sent to user ⚠️', suspend: 'User suspended 🔒', dismiss: 'Report dismissed ✓' };
+    toast(msgs[action], action === 'dismiss' ? 'info' : 'error');
+    const el = document.getElementById(id);
+    el.style.opacity = '0.35'; el.style.pointerEvents = 'none';
+  }
+
+  /* 8. STAR RATING — lights up stars up to the clicked one */
+  function setStars(n) {
+    document.querySelectorAll('#star-pick span').forEach((s, i) => s.classList.toggle('lit', i < n));
+  }
+</script>
+</body>
+</html>
