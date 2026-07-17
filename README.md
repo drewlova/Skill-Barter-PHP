@@ -13,3 +13,6 @@ A PHP + MySQL skill-bartering web app, built for XAMPP.
    work with a standard XAMPP install.
 5. Visit `http://localhost/<project-folder-name>/index.php`.
 
+//Pedrialva
+//Jayson
+//Drew
